@@ -5,6 +5,8 @@ public with sharing class IncomingLeadHandler implements IHandleMessages {
     @testVisible private static final String INCOMING_LEAD_CHANNEL = 'IncomingLeads';
     @testVisible private static final String INVALID_LEAD_ERROR = 'The Lead specified is invalid.';
     @testVisible private static final String CHANNEL_PARAM = 'channel';
+    private static final String LEAD_FIRST_NAME_PARAM = 'Lead.FirstName';
+    private static final String NOT_A_LEAD_ERROR = 'The data specified is not a lead.';
 
     /**
      * @description Constructs an instance of IncomingLeadHandler.
@@ -19,7 +21,9 @@ public with sharing class IncomingLeadHandler implements IHandleMessages {
      * @throws ArgumentException if the lead is missing a FirstName.
      */
     public void handleMessage(String channel, Object data) {
-        // TODO: Complete this method
+        ArgumentNullException.throwIfNull(channel, CHANNEL_PARAM);
+
+        handleValidIncomingLead(data);
     }
 
     /**
@@ -27,7 +31,28 @@ public with sharing class IncomingLeadHandler implements IHandleMessages {
      * @return A List<String> of channel names this implementation is subscribed to.
      */
     public List<String> getSubscribedChannels() {
-        // TODO: Complete this method
-        return new List<String>();
+        return new List<String>{
+            INCOMING_LEAD_CHANNEL
+        };
+    }
+
+    /**
+     * @description Handles only valid leads.
+     * @param data The accompanying data for the message.
+     * @throws ArgumentException if the lead is missing a FirstName or is not an instance of Lead.
+     */
+    private void handleValidIncomingLead(Object data) {
+        if (!(data instanceof Lead)) {
+            throw new ArgumentException(NOT_A_LEAD_ERROR);
+        }
+
+        try {
+            Lead incomingLead = (Lead) data;
+            ArgumentNullException.throwIfNull(incomingLead.FirstName, LEAD_FIRST_NAME_PARAM);
+
+            Database.insert(incomingLead);
+        } catch (ArgumentNullException ex) {
+            throw new ArgumentException(INVALID_LEAD_ERROR);
+        }
     }
 }
